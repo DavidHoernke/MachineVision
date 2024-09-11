@@ -1,20 +1,20 @@
-
 #########################################################################################################
 #
 #   ELEC 475 - Lab 1, Step 1
 #   Fall 2023
 #
 
+import argparse
+
+import matplotlib.pyplot as plt
 import torch
 import torchvision.transforms as transforms
-import argparse
-import matplotlib.pyplot as plt
-import numpy as np
 from torchvision.datasets import MNIST
+
 from model import autoencoderMLP4Layer
 
-def main():
 
+def main():
     print('running main ...')
 
     #   read arguments from command line
@@ -32,8 +32,8 @@ def main():
         bottleneck_size = args.z
 
     device = 'cpu'
-    if torch.cuda.is_available():
-        device = 'cuda'
+    # if torch.cuda.is_available():
+    #     device = 'cuda'
     print('\t\tusing device ', device)
 
     train_transform = transforms.Compose([
@@ -46,7 +46,7 @@ def main():
     # train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=True)
     # test_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False)
 
-    N_input = 28 * 28   # MNIST image size
+    N_input = 28 * 28  # MNIST image size
     N_output = N_input
     model = autoencoderMLP4Layer(N_input=N_input, N_bottleneck=bottleneck_size, N_output=N_output)
     model.load_state_dict(torch.load(save_file))
@@ -55,8 +55,7 @@ def main():
 
     idx = 0
     while idx >= 0:
-        idx = input("Enter index > ")
-        idx = int(idx)
+        idx = int(input("Enter index > "))
         if 0 <= idx <= train_set.data.size()[0]:
             print('label = ', train_set.targets[idx].item())
             img = train_set.data[idx]
@@ -73,39 +72,58 @@ def main():
             img = img.to(device=device)
             # print('break 7: ', torch.max(img), torch.min(img), torch.mean(img))
             print('break 8 : ', img.shape, img.dtype)
-            img = img.view(1, img.shape[0]*img.shape[1]).type(torch.FloatTensor)
+            img = img.view(1, img.shape[0] * img.shape[1]).type(torch.FloatTensor)
             print('break 9 : ', img.shape, img.dtype)
             with torch.no_grad():
                 output = model(img)
-            # output = output.view(28, 28).type(torch.ByteTensor)
-            # output = output.view(28, 28).type(torch.FloatTensor)
+
             output = output.view(28, 28).type(torch.FloatTensor)
             print('break 10 : ', output.shape, output.dtype)
             print('break 11: ', torch.max(output), torch.min(output), torch.mean(output))
-            # plt.imshow(output, cmap='gray')
-            # plt.show()
-
-            # both = np.hstack((img.view(28, 28).type(torch.FloatTensor),output))
-            # plt.imshow(both, cmap='gray')
-            # plt.show()
 
             img = img.view(28, 28).type(torch.FloatTensor)
 
             f = plt.figure()
-            f.add_subplot(1,2,1)
+            f.add_subplot(1, 2, 1)
             plt.imshow(img, cmap='gray')
-            f.add_subplot(1,2,2)
+            f.add_subplot(1, 2, 2)
             plt.imshow(output, cmap='gray')
             plt.show()
 
+            # Generate a noisy image and adding random noise to the image
+            noisyImage = img + torch.rand([28, 28])
 
+            # Ensure noisyImage has correct shape for the model
+            noisyImage_flat = noisyImage.view(1, 28 * 28).type(torch.FloatTensor)
 
+            # Pass noisyImage through model to get the denoised image
+            denoisedImage_flat = model(noisyImage_flat)
+
+            # Reshape the denoised image back to 28x28 for display
+            denoisedImage = denoisedImage_flat.view(28, 28)
+
+            # Second window displaying img, noisyImage, and denoisedImage
+            f2 = plt.figure(figsize=(10, 5))  # Adjust size to accommodate three images
+
+            # First image: Original image
+            f2.add_subplot(1, 3, 1)
+            plt.imshow(img, cmap='gray')
+            plt.title('Original')
+
+            # Second image: Noisy image
+            f2.add_subplot(1, 3, 2)
+            plt.imshow(noisyImage, cmap='gray')
+            plt.title('Noisy')
+
+            # Third image: Denoised image
+            f2.add_subplot(1, 3, 3)
+            plt.imshow(denoisedImage.detach().numpy(), cmap='gray')
+            plt.title('Denoised')
+
+            plt.show()
 
 
 ###################################################################
 
 if __name__ == '__main__':
     main()
-
-
-

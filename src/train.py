@@ -102,6 +102,7 @@ def main():
     print('\t\tsave file = ', save_file)
     print('\t\tplot file = ', plot_file)
 
+    # print("Cuda count:"+ torch.cuda.device_count())
     device = 'cpu'
     if torch.cuda.is_available():
         device = 'cuda'
