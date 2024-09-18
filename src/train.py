@@ -120,7 +120,7 @@ def main():
     ])
     test_transform = train_transform
 
-    train_set = MNIST('./data/mnist', train=True, download=True, transform=train_transform)
+    train_set = MNIST('./data/mnist', train=False, download=True, transform=train_transform)
     # test_set = MNIST('./data/mnist', train=False, download=True, transform=test_transform)
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=True)
     # test_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False)

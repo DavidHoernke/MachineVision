@@ -5,6 +5,7 @@
 #
 
 import argparse
+import random
 
 import matplotlib.pyplot as plt
 import torch
@@ -119,6 +120,54 @@ def main():
             f2.add_subplot(1, 3, 3)
             plt.imshow(denoisedImage.detach().numpy(), cmap='gray')
             plt.title('Denoised')
+
+            plt.show()
+
+            img = img.view(1, img.shape[0] * img.shape[1]).type(torch.FloatTensor)
+            print('break 9 : ', img.shape, img.dtype)
+            with torch.no_grad():
+                output = model.encode(img)
+
+            #Beggining of linear interpolation section
+
+            rand1 = random.randint(a=1, b=train_set.data.size()[0])
+            rand2 = random.randint(a=1, b=train_set.data.size()[0])
+
+
+            # Flatten the awdimages (since the network expects 28*28 dimensional input)
+            img1_flat = train_set.data[rand1].view(1,28* 28).type(torch.FloatTensor)/255.0
+            img2_flat = train_set.data[rand2].view(1,28* 28).type(torch.FloatTensor)/255.0
+
+            # Encode both images to get their bottleneck representations
+            bottleneck1 = model.encode(img1_flat)
+            bottleneck2 = model.encode(img2_flat)
+
+            print("Break 12: bottleneck1 size:",bottleneck1.shape, "  bottleneck2 size: ", bottleneck2.shape)
+
+            # Number of interpolation steps
+            n_steps = 8
+            interpolations = []
+
+            # Linear interpolation between bottleneck representations
+            for i in range(1, n_steps):
+                alpha = i / n_steps
+                interpolatedImage = bottleneck1 * (1 - alpha) + bottleneck2 * alpha
+                interpolations.append(interpolatedImage)
+
+            # Add start and end points to the interpolations
+            interpolations.insert(0, bottleneck1)
+            interpolations.append(bottleneck2)
+
+            # Decode each interpolated bottleneck tensor to get the reconstructed images
+            with torch.no_grad():
+                decoded_images = [model.decode(interp).view(28, 28) for interp in interpolations]
+
+            # Plot the full set of interpolated images
+            plt.figure(figsize=(15, 5))
+            for i, decoded_image in enumerate(decoded_images):
+                plt.subplot(1, n_steps + 2, i + 1)  # n_steps + 2 to account for both ends
+                plt.imshow(decoded_image.detach().numpy(), cmap='gray')
+                plt.axis('off')
 
             plt.show()
 
